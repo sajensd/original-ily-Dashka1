@@ -1,0 +1,953 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#F7F7F9">
+<title>Для тебя</title>
+<style>
+:root {
+  --ios-pink: #FF2D55;
+  --ios-pink-dark: #D70040;
+  --ios-bg: #F7F7F9;
+  --ios-card: rgba(255,255,255,0.78);
+  --ios-border: rgba(60,60,67,0.12);
+  --ios-text: #1C1C1E;
+  --ios-text-2: #8E8E93;
+  --ios-text-3: #C7C7CC;
+  --spring: cubic-bezier(0.32, 0.72, 0, 1);
+  --bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --font: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', system-ui, sans-serif;
+}
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; -webkit-user-select:none; user-select:none; }
+html, body { font-family: var(--font); -webkit-font-smoothing: antialiased; -webkit-text-size-adjust: 100%; }
+body {
+  background: var(--ios-bg);
+  min-height: 100vh; min-height: 100dvh;
+  color: var(--ios-text);
+  overflow-x: hidden;
+  touch-action: manipulation;
+  padding: max(env(safe-area-inset-top), 16px) 16px max(env(safe-area-inset-bottom), 40px);
+  display: flex; flex-direction: column; align-items: center;
+  -webkit-overflow-scrolling: touch;
+}
+.app { max-width: 440px; width: 100%; padding-top: 8px; }
+.header { padding: 8px 4px 24px; }
+.header h1 { font-size: 32px; font-weight: 700; color: var(--ios-text); letter-spacing: -0.8px; margin-bottom: 4px; }
+.header p { font-size: 15px; color: var(--ios-text-2); font-weight: 400; transition: opacity 0.4s var(--spring); }
+.card {
+  background: var(--ios-card);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-radius: 20px; padding: 18px 16px; margin-bottom: 12px;
+  border: 0.5px solid var(--ios-border);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+}
+.card-label {
+  font-size: 11px; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 0.4px; color: var(--ios-text-2); margin-bottom: 12px; padding: 0 2px;
+}
+.counter-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.counter-cell {
+  background: rgba(255,255,255,0.7); border-radius: 12px;
+  padding: 12px 2px 9px; text-align: center;
+  border: 0.5px solid var(--ios-border);
+}
+.counter-num {
+  display: block; font-size: 24px; font-weight: 600; color: var(--ios-text);
+  line-height: 1; font-variant-numeric: tabular-nums; letter-spacing: -0.5px;
+}
+.counter-label {
+  display: block; font-size: 10px; font-weight: 500; color: var(--ios-text-3);
+  margin-top: 5px; letter-spacing: 0.2px;
+}
+.countdown-cell { background: rgba(255,45,85,0.06); border-color: rgba(255,45,85,0.12); }
+.countdown-cell .counter-num { color: var(--ios-pink-dark); }
+.countdown-note { margin-top: 10px; text-align: center; font-size: 12px; color: var(--ios-text-2); font-weight: 400; }
+.timeline { padding-left: 2px; }
+.timeline-item { position: relative; padding: 0 0 16px 22px; }
+.timeline-item:last-child { padding-bottom: 0; }
+.timeline-item:not(:last-child)::after { content:''; position:absolute; left:6px; top:14px; bottom:0; width:1.5px; background: var(--ios-border); }
+.timeline-dot { position:absolute; left:0; top:2px; width:14px; height:14px; border-radius:50%; background:var(--ios-pink); box-shadow:0 0 0 3px var(--ios-bg); }
+.timeline-item.future .timeline-dot { background:#fff; border:2.5px solid var(--ios-pink); }
+.timeline-date { display:block; font-size:11px; font-weight:600; color:var(--ios-pink); margin-bottom:3px; }
+.timeline-text { font-size:14.5px; line-height:1.4; color:var(--ios-text); }
+
+.heart-zone { text-align:center; padding: 10px 0 6px; position: relative; }
+.heart-btn {
+  background: transparent; border: none; font-size: 76px; line-height: 1; cursor: pointer; padding: 0;
+  animation: heartbeat 2.8s ease-in-out infinite;
+  filter: drop-shadow(0 8px 24px rgba(255,45,85,0.28));
+  transition: filter 0.2s var(--spring);
+  -webkit-touch-callout: none;
+}
+.heart-btn:active { filter: drop-shadow(0 4px 12px rgba(255,45,85,0.4)); }
+@keyframes heartbeat { 0%,100%{transform:scale(1)} 50%{transform:scale(1.05)} }
+.hint { margin-top:8px; font-size:12px; color:var(--ios-text-3); transition: color 0.3s var(--spring); min-height: 16px; }
+.hint.active { color: var(--ios-pink); }
+
+.fire-sticker {
+  position: absolute; top: -10px; right: 20%; font-size: 28px;
+  opacity: 0; transform: scale(0.3) rotate(-15deg);
+  transition: all 0.5s var(--bounce); pointer-events: none;
+  filter: drop-shadow(0 4px 12px rgba(255,100,0,0.4));
+}
+.fire-sticker.show { opacity: 1; transform: scale(1) rotate(0deg); }
+
+.btn {
+  background: var(--ios-pink); color: #fff; border: none; padding: 15px 20px; border-radius: 14px;
+  font-size: 16px; font-weight: 600; cursor: pointer; font-family: inherit; width: 100%;
+  transition: transform 0.18s var(--spring), opacity 0.18s var(--spring);
+  letter-spacing: -0.2px;
+}
+.btn:active { transform: scale(0.96); opacity: 0.85; }
+.btn-secondary { background: rgba(255,255,255,0.9); color: var(--ios-pink); border: 0.5px solid rgba(255,45,85,0.2); }
+.btn-block { display: block; margin-top: 10px; }
+
+.reason-box { max-height: 0; overflow: hidden; transition: max-height 0.4s var(--spring), margin 0.3s var(--spring); margin: 0; }
+.reason-box.show { max-height: 200px; margin: 0 0 10px; }
+.reason-content {
+  background: rgba(255,45,85,0.06); border-radius: 12px; padding: 14px 16px; text-align: center;
+  font-size: 14.5px; line-height: 1.5; color: var(--ios-text); font-weight: 500;
+  animation: fadeIn 0.4s var(--spring);
+}
+@keyframes fadeIn { from{opacity:0; transform:translateY(6px)} to{opacity:1; transform:translateY(0)} }
+
+.info-box { max-height: 0; overflow: hidden; transition: max-height 0.4s var(--spring), margin 0.3s var(--spring); margin: 0; }
+.info-box.show { max-height: 200px; margin: 0 0 10px; }
+.info-content {
+  background: linear-gradient(160deg, rgba(255,45,85,0.08), rgba(255,45,85,0.03));
+  border-radius: 12px; padding: 16px 18px; text-align: center;
+  font-size: 15px; line-height: 1.5; color: var(--ios-text); font-weight: 500;
+  animation: fadeIn 0.4s var(--spring);
+}
+
+.skip-btn {
+  background: rgba(255,45,85,0.06); color: var(--ios-pink-dark); border: 0.5px solid rgba(255,45,85,0.15);
+  border-radius: 14px; padding: 14px 20px; width: 100%; font-size: 15px; font-weight: 600;
+  cursor: pointer; font-family: inherit; transition: transform 0.18s var(--spring), background 0.18s var(--spring);
+  letter-spacing: -0.2px; display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+.skip-btn:active { transform: scale(0.96); background: rgba(255,45,85,0.12); }
+.skip-count {
+  background: var(--ios-pink); color: #fff; border-radius: 100px; padding: 1px 9px;
+  font-size: 13px; font-weight: 700; min-width: 24px; display: inline-block;
+}
+
+.credit { text-align: center; font-size: 11px; color: var(--ios-text-3); margin-top: 8px; line-height: 1.5; padding: 0 10px; cursor: pointer; transition: opacity 0.2s; }
+.credit:active { opacity: 0.6; }
+
+.bottom-secret {
+  opacity: 0; transform: translateY(16px);
+  transition: opacity 1s var(--spring), transform 1s var(--spring);
+  text-align: center; font-size: 13px; color: var(--ios-text-2);
+  line-height: 1.6; margin-top: 20px; padding: 16px 20px; font-style: italic;
+}
+.bottom-secret.show { opacity: 1; transform: translateY(0); }
+
+.notification {
+  position: fixed; top: max(env(safe-area-inset-top), 12px); left: 12px; right: 12px; max-width: 420px;
+  margin: 0 auto; background: rgba(255,255,255,0.94);
+  backdrop-filter: blur(30px) saturate(180%); -webkit-backdrop-filter: blur(30px) saturate(180%);
+  border-radius: 16px; padding: 11px 13px; display: flex; align-items: flex-start; gap: 10px;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.08); z-index: 1000;
+  animation: notifIn 0.45s var(--spring);
+  border: 0.5px solid rgba(255,255,255,0.8); cursor: pointer;
+}
+@keyframes notifIn { from{transform:translateY(-130%) scale(0.92); opacity:0} to{transform:translateY(0) scale(1); opacity:1} }
+.notification.closing { animation: notifOut 0.3s var(--spring) forwards; }
+@keyframes notifOut { to{transform:translateY(-130%) scale(0.92); opacity:0} }
+.notif-icon {
+  width: 34px; height: 34px; border-radius: 9px; background: var(--ios-pink);
+  display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0;
+}
+.notif-content { flex: 1; min-width: 0; }
+.notif-title { font-size: 12px; font-weight: 600; color: var(--ios-text); margin-bottom: 1px; display: flex; justify-content: space-between; align-items: center; }
+.notif-time { font-size: 10px; color: var(--ios-text-3); font-weight: 400; }
+.notif-body { font-size: 13px; color: var(--ios-text); line-height: 1.35; word-wrap: break-word; }
+
+.sheet { position: fixed; inset: 0; z-index: 2000; display: none; }
+.sheet.open { display: block; }
+.sheet-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,0.35); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); animation: fadeIn 0.3s ease-out; }
+.sheet-panel {
+  position: absolute; bottom: 0; left: 0; right: 0; max-width: 480px; margin: 0 auto; max-height: 92vh;
+  background: #FFFFFF; border-radius: 24px 24px 0 0; padding: 10px 20px calc(env(safe-area-inset-bottom) + 20px);
+  overflow-y: auto; animation: sheetUp 0.45s var(--spring);
+  box-shadow: 0 -4px 30px rgba(0,0,0,0.08); -webkit-overflow-scrolling: touch;
+}
+@keyframes sheetUp { from{transform:translateY(100%)} to{transform:translateY(0)} }
+.sheet-handle { width: 32px; height: 4px; background: rgba(60,60,67,0.2); border-radius: 100px; margin: 0 auto 14px; }
+.sheet-title { font-size: 20px; font-weight: 700; color: var(--ios-text); text-align: center; margin-bottom: 14px; }
+.sheet-text p { font-size: 15px; line-height: 1.55; color: var(--ios-text); margin-bottom: 10px; }
+.sheet-sign { text-align: right; font-size: 15px; font-weight: 600; color: var(--ios-pink); margin-top: 12px; font-style: italic; }
+
+.tapback-heart {
+  position: fixed; pointer-events: none; z-index: 1500; font-size: 26px;
+  animation: tapbackPop 0.9s var(--spring) forwards; will-change: transform, opacity;
+  filter: drop-shadow(0 4px 12px rgba(255,45,85,0.4));
+}
+@keyframes tapbackPop {
+  0% { transform: translate(-50%, -50%) scale(0.2); opacity: 0; }
+  30% { transform: translate(-50%, -60%) scale(1.3); opacity: 1; }
+  100% { transform: translate(-50%, -100%) scale(0.8); opacity: 0; }
+}
+
+.fire-particle {
+  position: fixed; pointer-events: none; z-index: 1500; font-size: 22px;
+  animation: fireFade 1s var(--spring) forwards; will-change: transform, opacity;
+}
+@keyframes fireFade {
+  0% { transform: translate(-50%, -50%) scale(0.5); opacity: 1; }
+  100% { transform: translate(-50%, -150%) scale(1.2); opacity: 0; }
+}
+
+.confetti {
+  position: fixed; width: 8px; height: 8px; top: -20px; pointer-events: none; z-index: 1400;
+  animation: confettiFall linear forwards; will-change: transform, opacity;
+}
+@keyframes confettiFall {
+  0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+}
+
+.falling-heart { position: fixed; top: -30px; pointer-events: none; z-index: 1; animation: fallDown linear forwards; will-change: transform; }
+@keyframes fallDown { from{transform:translateY(0) rotate(0deg); opacity:0} 10%{opacity:0.45} 90%{opacity:0.45} to{transform:translateY(105vh) rotate(180deg); opacity:0} }
+</style>
+</head>
+<body>
+
+<!-- Скрытый плеер для фоновой музыки -->
+<audio id="bgMusic" src="music.mp3" loop></audio>
+
+<div class="app">
+  <header class="header">
+    <h1>Для тебя</h1>
+    <p id="greeting">просто потому что ты есть</p>
+  </header>
+
+  <div class="card">
+    <div class="card-label">Мы вместе уже</div>
+    <div class="counter-row">
+      <div class="counter-cell"><span class="counter-num" id="days">0</span><span class="counter-label" id="daysLabel">дней</span></div>
+      <div class="counter-cell"><span class="counter-num" id="hours">00</span><span class="counter-label" id="hoursLabel">часов</span></div>
+      <div class="counter-cell"><span class="counter-num" id="minutes">00</span><span class="counter-label" id="minutesLabel">минут</span></div>
+      <div class="counter-cell"><span class="counter-num" id="seconds">00</span><span class="counter-label" id="secondsLabel">секунд</span></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-label">До того, как я приеду</div>
+    <div class="counter-row">
+      <div class="counter-cell countdown-cell"><span class="counter-num" id="cdDays">0</span><span class="counter-label" id="cdDaysLabel">дней</span></div>
+      <div class="counter-cell countdown-cell"><span class="counter-num" id="cdHours">00</span><span class="counter-label" id="cdHoursLabel">часов</span></div>
+      <div class="counter-cell countdown-cell"><span class="counter-num" id="cdMinutes">00</span><span class="counter-label" id="cdMinutesLabel">минут</span></div>
+      <div class="counter-cell countdown-cell"><span class="counter-num" id="cdSeconds">00</span><span class="counter-label" id="cdSecondsLabel">секунд</span></div>
+    </div>
+    <p class="countdown-note" id="countdownNote">21 ноября, после работы</p>
+  </div>
+
+  <div class="card">
+    <div class="card-label">Наша история</div>
+    <div class="timeline">
+      <div class="timeline-item">
+        <span class="timeline-dot"></span>
+        <span class="timeline-date">24 октября 2026</span>
+        <p class="timeline-text">Вокзал. Ты смотрела на мои губы, потом в глаза. Я не сдержался. Лучшее решение в жизни.</p>
+      </div>
+      <div class="timeline-item">
+        <span class="timeline-dot"></span>
+        <span class="timeline-date">1 ноября 2026</span>
+        <p class="timeline-text">Мы вместе. Официально. Самый счастливый день.</p>
+      </div>
+      <div class="timeline-item future">
+        <span class="timeline-dot"></span>
+        <span class="timeline-date">21 ноября 2026</span>
+        <p class="timeline-text">Приеду к тебе домой после работы. Будем вайбить.</p>
+      </div>
+      <div class="timeline-item future">
+        <span class="timeline-dot"></span>
+        <span class="timeline-date">15 мая</span>
+        <p class="timeline-text">Твой день рождения. Уже придумываю, как тебя поздравить.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="heart-zone">
+      <span class="fire-sticker" id="fireSticker">🔥</span>
+      <button class="heart-btn" id="heartBtn" aria-label="Сердечко">🤍</button>
+      <p class="hint" id="hint">нажми (или дважды)</p>
+    </div>
+  </div>
+
+  <div class="card" style="padding: 14px;">
+    <button class="btn" id="reasonsBtn" style="margin-bottom: 10px;">Почему ты лучшая</button>
+    <div class="reason-box" id="reasonBox"></div>
+
+    <button class="btn" id="wishBtn" style="margin-bottom: 10px; background: linear-gradient(135deg, #FF6482, #FF2D55);">Хочу с тобой</button>
+    <div class="info-box" id="wishBox"></div>
+
+    <button class="btn" id="factBtn" style="margin-bottom: 10px; background: linear-gradient(135deg, #C7A0FF, #8E5BFF);">Факт обо мне</button>
+    <div class="info-box" id="factBox"></div>
+
+    <button class="skip-btn" id="skipBtn" style="margin-bottom: 10px;">
+      Я скучаю <span class="skip-count" id="skipCount">0</span>
+    </button>
+
+    <button class="btn btn-secondary btn-block" id="letterBtn">Открыть письмо</button>
+  </div>
+
+  <p class="credit" id="credit">от твоего Сашеньки</p>
+  <p class="bottom-secret" id="bottomSecret">Ты дочитала до самого конца. Значит, тебе правда не всё равно. Я тебя очень люблю.</p>
+</div>
+
+<div class="sheet" id="letterSheet">
+  <div class="sheet-backdrop" id="sheetBackdrop"></div>
+  <div class="sheet-panel">
+    <div class="sheet-handle"></div>
+    <h2 class="sheet-title">Просто почитай</h2>
+    <div class="sheet-text">
+      <p>24 октября на вокзале я понял, что пропал. Ты смотрела на мои губы, потом в глаза. Я не сдержался. И ни разу не пожалел.</p>
+      <p>Ты называешь меня Сашенькой, своим мальчиком, самым лучшим. Я таю каждый раз.</p>
+      <p>Я иногда ищу в тебе подвох. Потому что ты слишком идеальная. Но его нет. И это сводит меня с ума.</p>
+      <p>Ты мой ангелочек. И я не знаю, чем заслужил тебя.</p>
+      <p>21 ноября я приеду к тебе после работы. Домой. Будем вайбить жоска. Я уже считаю дни.</p>
+      <p>Спасибо, что ты есть. Спасибо, что выбрала меня.</p>
+    </div>
+    <p class="sheet-sign">Твой самый лучший мальчик, Сашенька</p>
+    <button class="btn btn-block" id="closeLetter" style="margin-top: 16px;">Закрыть</button>
+  </div>
+</div>
+
+<script>
+const START_DATE = new Date('2026-11-01T18:00:00+03:00').getTime();
+const MEETING_DATE = new Date('2026-11-21T19:00:00+03:00').getTime();
+
+const compliments = [
+  "я фанат твоих зелёных глаз. В них можно утонуть и не захотеть спасаться.",
+  "в твоих зелёных глазах я вижу целый мир, который хочу исследовать.",
+  "твои зелёные глаза — это моя личная катастрофа. В самом хорошем смысле.",
+  "твоя фигура сводит меня с ума. Ты самая красивая и желанная.",
+  "я балдею от твоей фигуры. Ты невероятно красивая.",
+  "твоя фигура и твоя милая мордашка — это идеальное сочетание.",
+  "каждая деталь в тебе — от глаз до фигуры — просто божественна.",
+  "ты самая красивая девочка на свете. И это объективный факт.",
+  "твои ножки — отдельный вид искусства, и я твой главный фанат.",
+  "ты слишком идеальная. Это нечестно по отношению к остальным.",
+  "я до сих пор ищу в тебе подвох. Потому что не верю, что такая красивая может быть реальной.",
+  "мне нравится абсолютно каждая мелочь в тебе. От кончиков волос до кончиков пальцев.",
+  "твоя улыбка делает мой день в сто раз лучше. Это уже научный факт.",
+  "ты самая красивая. И, пожалуйста, не спорь со мной.",
+  "я обожаю твои волосы. Мне нравится их трогать и вдыхать их запах.",
+  "мне безумно нравится, как ты выглядишь утром. Это нечестно красиво.",
+  "твоя кожа кажется мне невероятно нежной.",
+  "я обожаю, как ты морщишь нос, когда о чём-то задумываешься.",
+  "твой смех — моя самая любимая мелодия на свете.",
+  "я готов слушать твой голос бесконечно и никогда не устану.",
+  "мне нравится, как ты пахнешь. Твой запах сводит меня с ума.",
+  "твоя милая мордашка может заставить меня улыбнуться в любой ситуации.",
+  "ты — самое красивое, что я видел в своей жизни.",
+  "я постоянно ловлю себя на мысли, как мне повезло с тобой внешне.",
+  "твои губы созданы для поцелуев. И я готов это доказывать постоянно.",
+  "ты выглядишь потрясающе в любой одежде.",
+  "твоя фигура — это что-то невероятное. Я до сих пор в шоке.",
+  "у тебя самые красивые и манящие зеленые глаза на планете.",
+  "твоя красота заставляет меня забывать слова.",
+  "я могу смотреть на тебя часами и не уставать.",
+  "мне так уютно и спокойно с тобой, словно я наконец-то вернулся домой.",
+  "ты делаешь меня лучше, просто существуя в моей жизни.",
+  "я хочу засыпать и просыпаться рядом с тобой. Каждый день.",
+  "ты — моя самая большая и самая любимая слабость.",
+  "я хочу состариться с тобой. И это абсолютно не шутка.",
+  "я скучаю по тебе, даже когда ты находишься рядом.",
+  "твои объятия лечат лучше любого лекарства.",
+  "с тобой я чувствую себя самым счастливым человеком на планете.",
+  "ты — главная причина моей улыбки по утрам.",
+  "ты — мой человек. Я это точно знаю.",
+  "я хочу, чтобы ты всегда чувствовала себя самой любимой.",
+  "ты первая, кому я хочу написать, когда что-то происходит.",
+  "я хочу, чтобы ты никогда не грустила. А если грустишь — я всегда рядом.",
+  "мне так повезло, что я иногда не верю в это.",
+  "ты — моя вселенная. И я готов её беречь.",
+  "хочу держать тебя за руку крепко-крепко. И никогда не отпускать.",
+  "твоя забота обо мне — самое тёплое, что я чувствую.",
+  "ты — причина, по которой я верю в любовь.",
+  "с тобой даже просто молчать — это кайф.",
+  "твоя доброта и искренность покорили меня с первых дней.",
+  "я хочу быть тем, кто защитит тебя от всего плохого.",
+  "ты делаешь этот мир добрее и светлее.",
+  "я готов ради тебя на всё. Без преувеличений.",
+  "я обожаю, как ты называешь меня своим мальчиком. У меня мурашки каждый раз.",
+  "я хочу, чтобы ты знала: я твой навсегда.",
+  "мне нравится, как ты смотришь на меня. Особенно когда думаешь, что я не вижу.",
+  "твоя улыбка заставляет моё сердце биться чаще.",
+  "я каждый день благодарю судьбу за то, что встретил тебя.",
+  "ты — мой личный источник вдохновения и счастья.",
+  "я хочу разделить с тобой всю свою жизнь, до последней секунды.",
+  "ты понимаешь меня без слов. И это бесценно.",
+  "рядом с тобой я могу быть настоящим собой.",
+  "я обожаю твою заботу. Даже когда ты просто спрашиваешь, поел ли я.",
+  "ты делаешь меня счастливым каждый день, просто находясь рядом.",
+  "я влюбляюсь в тебя заново каждый раз, когда ты улыбаешься.",
+  "твоя поддержка значит для меня больше, чем ты можешь представить.",
+  "я хочу стать тем мужчиной, которого ты заслуживаешь.",
+  "мне нравится, как ты радуешься мелочам. Это так мило.",
+  "я обожаю твои маленькие привычки. Они делают тебя особенной.",
+  "без тебя мой мир был бы серым.",
+  "я не устану говорить тебе, как сильно я тебя люблю.",
+  "ты — мой самый близкий и родной человек.",
+  "я обожаю просыпаться и видеть твои сообщения.",
+  "я хочу, чтобы ты знала: ты лучше всех.",
+  "каждый раз, когда ты смеёшься, я влюбляюсь в тебя еще сильнее.",
+  "ты — моя самая большая удача.",
+  "я хочу, чтобы наши отношения были самыми крепкими и счастливыми.",
+  "мне нравится, как ты берешь меня за руку.",
+  "твоя нежность сводит меня с ума.",
+  "ты — моя самая родная девочка.",
+  "я всегда буду на твоей стороне.",
+  "я горжусь тобой.",
+  "мне нравится, как ты меня обнимаешь.",
+  "я хочу, чтобы ты чувствовала мою любовь каждую секунду.",
+  "с тобой я дома. В любом городе, в любой точке мира.",
+  "я до сих пор улыбаюсь, когда вспоминаю нашу первую встречу на вокзале.",
+  "тот поцелуй на вокзале я не забуду никогда. И хочу повторять его снова и снова.",
+  "когда ты сказала, что я самый лучший мальчик, я понял, что пропал.",
+  "я обожаю, как ты пишешь мне по утрам.",
+  "я перечитываю наши сообщения, когда скучаю. А скучаю я часто.",
+  "я хочу как можно скорее увидеть тебя 21 ноября и обнять.",
+  "я обожаю твой ангельский вид, но знаю, что ты можешь быть и другой.",
+  "я ищу в тебе подвох и очень расстраиваюсь, что не нахожу.",
+  "ты моя самая любимая миленькая.",
+  "даже твои колючки (если они есть) делают тебя еще милее.",
+  "я до сих пор храню в памяти тот момент, когда ты мне улыбнулась впервые.",
+  "ты — лучшее, что случилось со мной в 2026 году.",
+  "я хочу, чтобы 21 ноября наступило как можно быстрее.",
+  "«ты самая красивая среди самых красивых», и это правда.",
+  "«весь мир воплощается в твоих глазах», особенно в зелёных.",
+  "в тебе «кипит вселенная, пока другие спят».",
+  "«ты чувствуешь любовь, я верю, это навсегда».",
+  "ты «даришь уют, создаёшь уют», как в той песне.",
+  "«лишь с тобой уютно, ты мой уют».",
+  "«мне в тебе так уютно, словно дома».",
+  "«я хочу всю жизнь, а не только на ночь».",
+  "«ты вдохновляешь мир, он тобой оживлён».",
+  "«снова плачет небо, я прижму тебя к плечам».",
+  "«твоя душа поёт. И я со всех сил подпеваю ей».",
+  "«не улетай. Не исчезай. Я умоляю».",
+  "«люби меня, люби. Жарким огнём, ночью и днём».",
+  "«твоя любовь могучая».",
+  "«тебе птицы поют, о тебе песни поют».",
+  "«малая, только ты»."
+];
+
+const milestones = {
+  10: { text: 'Ты уже 10 раз нажала. А я уже на седьмом небе. Ты — моё самое любимое чудо.', title: 'Секретик' },
+  20: { text: '20 кликов. Знаешь, что я понял? Я никогда не устану говорить тебе, какая ты. Никогда.', title: 'Секретик' },
+  30: { text: '30 раз. Ты правда читаешь всё? Тогда главное: ты — лучшее, что со мной случилось. И я тебя очень люблю.', title: 'Секретик' },
+  50: { text: '50. Пятьдесят раз ты нажала. И знаешь что? Я влюбляюсь в тебя каждый раз заново.', title: 'Секретик' },
+  100: { text: '100 раз. Сто. Если бы каждое нажатие было «люблю», я бы уже сказал его 100 раз. Люблю тебя.', title: 'Секретик' },
+};
+
+const reasons = [
+  'За то, как ты говоришь «Сашенька»',
+  'За твою улыбку',
+  'За то, как ты выглядишь утром',
+  'За твои зелёные глазки',
+  'За то, как ты заботишься обо мне',
+  'За твоё «самый лучший мальчик»',
+  'За твой голос в трубке',
+  'За то, как ты смеёшься над моими шутками',
+  'За то, что ты есть',
+  'За твои сообщения в любое время дня',
+  'За то, что с тобой спокойно и мирно',
+  'За то, как ты смотришь на меня',
+  'За то, что ты моя, а я твой',
+  'За то, как ты целуешь меня на прогулке',
+  'За наш вокзал. За тот поцелуй',
+  'За то, что ты выбрала меня',
+  'За то, что ты просто ты',
+  'За то, что ты ангелочек',
+  'За то, что ты слишком идеальная. И это правда',
+  'За то, что я ищу в тебе подвох и не нахожу',
+  'За то, как ты морщишь нос, когда думаешь',
+  'За твои маленькие привычки, которые я обожаю',
+  'За то, как ты радуешься мелочам',
+  'За то, что рядом с тобой я чувствую себя собой',
+  'За то, что ты делаешь меня лучше',
+  'За твою доброту',
+  'За твою искренность',
+  'За то, как ты держишь меня за руку',
+  'За твой смех',
+  'За твои объятия',
+  'За то, что ты моя самая большая слабость',
+  'За то, что ты моё всё',
+  'За то, что ты — моя причина улыбаться',
+  'За то, что ты — мой человек',
+  'За то, что ты — мой ангелочек',
+];
+
+const wishes = [
+  'Обнять тебя и не отпускать',
+  'Смотреть фильм под одним пледом',
+  'Гулять до утра, ни о чём не думая',
+  'Готовить вместе что-нибудь вкусное',
+  'Просто лежать и болтать обо всём',
+  'Завтракать вместе на выходных',
+  'Смотреть закат и молчать',
+  'Пить кофе и смотреть на тебя',
+  'Заснуть в обнимку',
+  'Смеяться до слёз над чем-нибудь глупым',
+  'Ехать куда глаза глядят',
+  'Сидеть на вокзале, как в первый раз',
+  'Услышать, как ты называешь меня своим мальчиком',
+  'Гулять за руку по городу',
+  'Приготовить тебе завтрак в постель',
+  'Танцевать с тобой на кухне',
+  'Записать с тобой тикток (даже если стыдно)',
+  'Смотреть, как ты улыбаешься',
+  'Обнимать тебя, пока ты не скажешь «хватит» (а ты не скажешь)',
+];
+
+const facts = [
+  'Я с первого взгляда понял, что ты не такая, как все',
+  'Я до сих пор помню, во что ты была одета на нашей первой встрече',
+  'Я перечитываю наши сообщения, когда скучаю',
+  'Я думаю о тебе перед сном каждый день',
+  'Мне нравится, как ты пишешь «Сашенька». Каждый раз улыбаюсь',
+  'Я запомнил твоё любимое и нелюбимое. На всякий случай',
+  'Я специально включаю треки, под которые думаю о тебе',
+  'Я иногда захожу в твой профиль просто чтобы посмотреть',
+  'Мне нравится представлять нашу жизнь через год',
+  'Я боюсь тебя потерять больше, чем что-либо',
+  'Ты первая, кому я хочу написать, когда что-то случается',
+  'Я бы всё отдал, чтобы ты никогда не грустила',
+  'Я ищу в тебе подвох, потому что не верю, что мне так повезло',
+  'Ты снишься мне, и я не хочу просыпаться',
+  'Я хочу состариться с тобой. И это не шутка',
+];
+
+const doubleTapMessages = [
+  'Двойное нажатие. Двойная любовь',
+  'Ты нажала дважды. А я люблю тебя в миллион раз сильнее',
+  'Это твой знак. Я тебя очень люблю',
+  'Двойной клик — двойное сердце. Забирай оба',
+  'Ты быстрая. А я всё равно влюблён',
+];
+
+let audioCtx = null;
+const bgMusic = document.getElementById('bgMusic');
+
+function initAudio() {
+  if (audioCtx) return;
+  try {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    
+    if (bgMusic) {
+      bgMusic.volume = 0.25;
+      bgMusic.play().catch(() => {});
+    }
+  } catch (e) {}
+}
+document.addEventListener('touchstart', initAudio, { once: true });
+document.addEventListener('click', initAudio, { once: true });
+
+function playPop(freq = 520, dur = 0.08) {
+  if (!audioCtx) return;
+  try {
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(freq * 1.6, audioCtx.currentTime + dur);
+    gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start(); osc.stop(audioCtx.currentTime + dur);
+  } catch (e) {}
+}
+
+function playChime() {
+  if (!audioCtx) return;
+  try {
+    [660, 880].forEach((f, i) => {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(f, audioCtx.currentTime + i * 0.1);
+      gain.gain.setValueAtTime(0.08, audioCtx.currentTime + i * 0.1);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + i * 0.1 + 0.25);
+      osc.connect(gain); gain.connect(audioCtx.destination);
+      osc.start(audioCtx.currentTime + i * 0.1); osc.stop(audioCtx.currentTime + i * 0.1 + 0.25);
+    });
+  } catch (e) {}
+}
+
+function playMilestoneSound() {
+  if (!audioCtx) return;
+  try {
+    [523, 659, 784, 1046].forEach((f, i) => {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(f, audioCtx.currentTime + i * 0.12);
+      gain.gain.setValueAtTime(0.07, audioCtx.currentTime + i * 0.12);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + i * 0.12 + 0.4);
+      osc.connect(gain); gain.connect(audioCtx.destination);
+      osc.start(audioCtx.currentTime + i * 0.12); osc.stop(audioCtx.currentTime + i * 0.12 + 0.4);
+    });
+  } catch (e) {}
+}
+
+function updateGreeting() {
+  const h = new Date().getHours();
+  let g;
+  if (h >= 5 && h < 12) g = 'доброе утро, солнце';
+  else if (h >= 12 && h < 17) g = 'хорошего дня, солнце';
+  else if (h >= 17 && h < 23) g = 'хорошего вечера, солнце';
+  else g = 'спокойной ночи, солнце';
+  document.getElementById('greeting').textContent = g;
+}
+updateGreeting();
+setInterval(updateGreeting, 60000);
+
+function plural(n, one, few, many) {
+  n = Math.abs(n) % 100; const n1 = n % 10;
+  if (n > 10 && n < 20) return many;
+  if (n1 > 1 && n1 < 5) return few;
+  if (n1 === 1) return one;
+  return many;
+}
+
+function updateTogether() {
+  const now = new Date();
+  const startDate = new Date(START_DATE);
+  
+  const todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const startMidnight = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
+  
+  const diffTime = todayMidnight - startMidnight;
+  let days = Math.round(diffTime / (1000 * 60 * 60 * 24)) + 1;
+  if (days < 1) days = 1;
+
+  const currentSec = Math.floor((now.getTime() - todayMidnight.getTime()) / 1000);
+  const hours = Math.floor(currentSec / 3600);
+  const mins = Math.floor((currentSec % 3600) / 60);
+  const secs = currentSec % 60;
+
+  document.getElementById('days').textContent = days;
+  document.getElementById('hours').textContent = String(hours).padStart(2,'0');
+  document.getElementById('minutes').textContent = String(mins).padStart(2,'0');
+  document.getElementById('seconds').textContent = String(secs).padStart(2,'0');
+  
+  document.getElementById('daysLabel').textContent = plural(days, 'день', 'дня', 'дней');
+  document.getElementById('hoursLabel').textContent = plural(hours, 'час', 'часа', 'часов');
+  document.getElementById('minutesLabel').textContent = plural(mins, 'минута', 'минуты', 'минут');
+  document.getElementById('secondsLabel').textContent = plural(secs, 'секунда', 'секунды', 'секунд');
+}
+
+function updateCountdown() {
+  let diff = MEETING_DATE - Date.now();
+  const note = document.getElementById('countdownNote');
+  if (diff <= 0) {
+    ['cdDays','cdHours','cdMinutes','cdSeconds'].forEach(id => document.getElementById(id).textContent = '0');
+    note.textContent = 'Сегодня тот самый день. Уже еду к тебе';
+    return;
+  }
+  const sec = Math.floor(diff / 1000);
+  const days = Math.floor(sec / 86400);
+  const hours = Math.floor((sec % 86400) / 3600);
+  const mins = Math.floor((sec % 3600) / 60);
+  const secs = sec % 60;
+  document.getElementById('cdDays').textContent = days;
+  document.getElementById('cdHours').textContent = String(hours).padStart(2,'0');
+  document.getElementById('cdMinutes').textContent = String(mins).padStart(2,'0');
+  document.getElementById('cdSeconds').textContent = String(secs).padStart(2,'0');
+  document.getElementById('cdDaysLabel').textContent = plural(days, 'день', 'дня', 'дней');
+  document.getElementById('cdHoursLabel').textContent = plural(hours, 'час', 'часа', 'часов');
+  document.getElementById('cdMinutesLabel').textContent = plural(mins, 'минута', 'минуты', 'минут');
+  document.getElementById('cdSecondsLabel').textContent = plural(secs, 'секунда', 'секунды', 'секунд');
+  if (days === 0) note.textContent = 'Уже сегодня. Собираюсь';
+  else if (days <= 3) note.textContent = 'Осталось совсем чуть-чуть. Уже в предвкушении';
+  else note.textContent = '21 ноября, после работы';
+}
+
+updateTogether(); updateCountdown();
+setInterval(updateTogether, 1000); 
+setInterval(updateCountdown, 1000);
+
+const heartEmojis = ['🤍','🩷','💗','💕'];
+function createFallingHeart() {
+  const h = document.createElement('div');
+  h.className = 'falling-heart';
+  h.textContent = heartEmojis[Math.floor(Math.random() * heartEmojis.length)];
+  h.style.left = Math.random() * 100 + 'vw';
+  h.style.fontSize = (Math.random() * 10 + 12) + 'px';
+  h.style.animationDuration = (Math.random() * 8 + 12) + 's';
+  document.body.appendChild(h);
+  setTimeout(() => h.remove(), 20000);
+}
+for (let i = 0; i < 8; i++) setTimeout(createFallingHeart, i * 500);
+setInterval(createFallingHeart, 1100);
+
+function showNotification(text, title) {
+  const existing = document.querySelector('.notification');
+  if (existing) existing.remove();
+  const notif = document.createElement('div');
+  notif.className = 'notification';
+  notif.innerHTML = `
+    <div class="notif-icon">💌</div>
+    <div class="notif-content">
+      <div class="notif-title"><span>${title || 'Признание 🤍'}</span><span class="notif-time">сейчас</span></div>
+      <div class="notif-body">${text}</div>
+    </div>`;
+  notif.addEventListener('click', () => notif.remove());
+  document.body.appendChild(notif);
+  setTimeout(() => { if (!notif.parentNode) return; notif.classList.add('closing'); setTimeout(() => notif.remove(), 300); }, 4500);
+}
+
+function createTapbackHeart(x, y) {
+  const el = document.createElement('div');
+  el.className = 'tapback-heart';
+  el.textContent = '❤️';
+  el.style.left = x + 'px';
+  el.style.top = y + 'px';
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 950);
+}
+
+function createFireParticles(x, y) {
+  for (let i = 0; i < 3; i++) {
+    const el = document.createElement('div');
+    el.className = 'fire-particle';
+    el.textContent = '🔥';
+    el.style.left = (x + (Math.random() - 0.5) * 40) + 'px';
+    el.style.top = (y + (Math.random() - 0.5) * 20) + 'px';
+    el.style.animationDelay = (i * 0.05) + 's';
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 1100);
+  }
+}
+
+function createConfetti(count = 40) {
+  const colors = ['#FF2D55', '#FF6482', '#FFC7D3', '#C7A0FF', '#FFD700', '#FFFFFF'];
+  for (let i = 0; i < count; i++) {
+    const el = document.createElement('div');
+    el.className = 'confetti';
+    el.style.left = Math.random() * 100 + 'vw';
+    el.style.background = colors[Math.floor(Math.random() * colors.length)];
+    el.style.animationDuration = (Math.random() * 2 + 2) + 's';
+    el.style.animationDelay = (Math.random() * 0.4) + 's';
+    el.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 3500);
+  }
+}
+
+let clickCount = 0;
+let totalTaps = 0;
+let currentDeck = []; 
+
+function resetDeck() {
+  currentDeck = [...compliments];
+  for (let i = currentDeck.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [currentDeck[i], currentDeck[j]] = [currentDeck[j], currentDeck[i]];
+  }
+}
+resetDeck();
+
+const heartBtn = document.getElementById('heartBtn');
+const hint = document.getElementById('hint');
+const fireSticker = document.getElementById('fireSticker');
+
+function animateHeartPress() {
+  heartBtn.animate(
+    [
+      { transform: 'scale(1)' },
+      { transform: 'scale(0.82)' },
+      { transform: 'scale(1.08)' },
+      { transform: 'scale(0.98)' },
+      { transform: 'scale(1)' }
+    ],
+    { duration: 500, easing: 'cubic-bezier(0.34, 1.56, 0.64, 1)', fill: 'none' }
+  );
+}
+
+let holdTimer = null;
+let holdTriggered = false;
+
+heartBtn.addEventListener('pointerdown', (e) => {
+  e.preventDefault();
+  holdTriggered = false;
+  holdTimer = setTimeout(() => {
+    holdTriggered = true;
+    initAudio();
+    playChime();
+    if (navigator.vibrate) navigator.vibrate([15, 40, 15]);
+    showNotification('Ты держишь моё сердце в руках. И я не хочу его забирать.', 'Секретик');
+    const rect = heartBtn.getBoundingClientRect();
+    createTapbackHeart(rect.left + rect.width / 2, rect.top + rect.height / 2);
+    createConfetti(20);
+  }, 600);
+});
+heartBtn.addEventListener('pointerup', () => { if (holdTimer) { clearTimeout(holdTimer); holdTimer = null; } });
+heartBtn.addEventListener('pointercancel', () => { if (holdTimer) { clearTimeout(holdTimer); holdTimer = null; } });
+heartBtn.addEventListener('pointerleave', () => { if (holdTimer) { clearTimeout(holdTimer); holdTimer = null; } });
+
+let lastTapTime = 0;
+
+heartBtn.addEventListener('click', () => {
+  if (holdTriggered) { holdTriggered = false; return; }
+
+  const now = Date.now();
+  const isDoubleTap = (now - lastTapTime < 320);
+  lastTapTime = now;
+
+  initAudio();
+  playPop(isDoubleTap ? 620 : 480, 0.07);
+  animateHeartPress();
+  if (navigator.vibrate) navigator.vibrate(isDoubleTap ? [10, 30, 10] : 8);
+
+  const rect = heartBtn.getBoundingClientRect();
+  const cx = rect.left + rect.width / 2;
+  const cy = rect.top + rect.height / 2;
+
+  if (isDoubleTap) {
+    createTapbackHeart(cx, cy);
+    setTimeout(() => createTapbackHeart(cx - 20, cy + 10), 80);
+    setTimeout(() => createTapbackHeart(cx + 20, cy + 10), 160);
+    createConfetti(25);
+    showNotification(doubleTapMessages[Math.floor(Math.random() * doubleTapMessages.length)], 'Сашенька');
+    return;
+  }
+
+  clickCount++;
+  totalTaps++;
+
+  if (totalTaps === 5) {
+    fireSticker.classList.add('show');
+    const r = fireSticker.getBoundingClientRect();
+    createFireParticles(r.left + r.width / 2, r.top + r.height / 2);
+    setTimeout(() => fireSticker.classList.remove('show'), 4000);
+  }
+
+  if (totalTaps >= 3) {
+    hint.textContent = 'ты уже нажала ' + totalTaps + ' раз';
+    hint.classList.add('active');
+  }
+
+  createTapbackHeart(cx, cy);
+
+  if (milestones[clickCount]) {
+    playMilestoneSound();
+    createConfetti(clickCount >= 50 ? 60 : 30);
+    showNotification(milestones[clickCount].text, milestones[clickCount].title);
+    return;
+  }
+
+  if (currentDeck.length === 0) resetDeck();
+  const text = currentDeck.pop();
+
+  showNotification('Признаюсь, что ' + text, 'Признание 🤍');
+});
+
+let reasonIndex = Math.floor(Math.random() * reasons.length);
+const reasonBox = document.getElementById('reasonBox');
+document.getElementById('reasonsBtn').addEventListener('click', () => {
+  initAudio(); playPop(620, 0.06);
+  reasonBox.classList.remove('show');
+  setTimeout(() => {
+    reasonBox.innerHTML = `<div class="reason-content">${reasons[reasonIndex % reasons.length]}</div>`;
+    reasonIndex++; reasonBox.classList.add('show');
+  }, 150);
+});
+
+let wishIndex = Math.floor(Math.random() * wishes.length);
+const wishBox = document.getElementById('wishBox');
+document.getElementById('wishBtn').addEventListener('click', () => {
+  initAudio(); playPop(580, 0.06);
+  wishBox.classList.remove('show');
+  setTimeout(() => {
+    wishBox.innerHTML = `<div class="info-content">${wishes[wishIndex % wishes.length]}</div>`;
+    wishIndex++; wishBox.classList.add('show');
+  }, 150);
+});
+
+let factIndex = Math.floor(Math.random() * facts.length);
+const factBox = document.getElementById('factBox');
+document.getElementById('factBtn').addEventListener('click', () => {
+  initAudio(); playPop(540, 0.06);
+  factBox.classList.remove('show');
+  setTimeout(() => {
+    factBox.innerHTML = `<div class="info-content">${facts[factIndex % facts.length]}</div>`;
+    factIndex++; factBox.classList.add('show');
+  }, 150);
+});
+
+// ЗАЩИТА LOCALSTORAGE ОТ ОШИБКИ НА ПК
+const skipBtn = document.getElementById('skipBtn');
+const skipCountEl = document.getElementById('skipCount');
+let skipCount = 0;
+try {
+  skipCount = parseInt(localStorage.getItem('skipCount') || '0', 10);
+} catch(e) {}
+skipCountEl.textContent = skipCount;
+
+skipBtn.addEventListener('click', () => {
+  initAudio(); playPop(420, 0.05);
+  skipCount++;
+  skipCountEl.textContent = skipCount;
+  try {
+    localStorage.setItem('skipCount', String(skipCount));
+  } catch(e) {}
+  if (navigator.vibrate) navigator.vibrate(5);
+
+  if (skipCount === 10) showNotification('10 раз скучала. Знай, я скучаю в 10 раз сильнее.', 'Секретик');
+  else if (skipCount === 25) showNotification('25. Я тоже очень скучаю. Скоро приеду.', 'Секретик');
+  else if (skipCount === 50) showNotification('50 раз. Ты меня подловила. Я скучаю по тебе всегда.', 'Секретик');
+});
+
+const sheet = document.getElementById('letterSheet');
+const backdrop = document.getElementById('sheetBackdrop');
+document.getElementById('letterBtn').addEventListener('click', (e) => {
+  initAudio(); playChime();
+  sheet.classList.add('open');
+  const rect = e.currentTarget.getBoundingClientRect();
+  createTapbackHeart(rect.left + rect.width / 2, rect.top + rect.height / 2);
+});
+document.getElementById('closeLetter').addEventListener('click', () => { playPop(380, 0.06); sheet.classList.remove('open'); });
+backdrop.addEventListener('click', () => sheet.classList.remove('open'));
+
+let creditTaps = 0;
+const credit = document.getElementById('credit');
+credit.addEventListener('click', () => {
+  creditTaps++;
+  if (creditTaps === 5) {
+    initAudio(); playMilestoneSound();
+    createConfetti(50);
+    showNotification('Ты нашла самый глубокий секрет. Я люблю тебя больше, чем могу сказать. Целую. Твой Сашка.', 'Секретик');
+    creditTaps = 0;
+  }
+});
+
+const bottomSecret = document.getElementById('bottomSecret');
+if ('IntersectionObserver' in window) {
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        bottomSecret.classList.add('show');
+        observer.disconnect();
+      }
+    });
+  }, { threshold: 0.4 });
+  observer.observe(bottomSecret);
+} else {
+  bottomSecret.classList.add('show');
+}
+</script>
+
+</body>
+</html>
